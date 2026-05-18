@@ -89,14 +89,16 @@ class CapitalClient:
         log.info(f"Open positions for {epic or 'all'}: {len(positions)}")
         return positions
 
-    def open_position(self, epic, direction, size):
+    def open_position(self, epic, direction, size, stop_distance=None):
         body = {
             "epic":           epic,
             "direction":      direction,
             "size":           size,
             "guaranteedStop": False
         }
-        log.info(f"Opening {direction} {size} x {epic}")
+        if stop_distance is not None:
+            body["stopDistance"] = stop_distance
+        log.info(f"Opening {direction} {size} x {epic} (stopDistance={stop_distance})")
         result = self._request("POST", "/api/v1/positions", json=body)
         log.info(f"Open position result: {result}")
         return result
@@ -107,22 +109,3 @@ class CapitalClient:
         log.info(f"Close position result: {result}")
         return result
 
-    def partial_close(self, epic, direction, size):
-        opposite = "SELL" if direction == "BUY" else "BUY"
-        log.info(f"Partial close: opening {opposite} {size} x {epic} to net off 50%")
-        result = self._request("POST", "/api/v1/positions", json={
-            "epic":           epic,
-            "direction":      opposite,
-            "size":           size,
-            "guaranteedStop": False
-        })
-        log.info(f"Partial close result: {result}")
-        return result
-
-    def set_sl_breakeven(self, deal_id):
-        log.info(f"Setting breakeven SL (stopAmount=0) on {deal_id}")
-        result = self._request("PUT", f"/api/v1/positions/{deal_id}", json={
-            "stopAmount": 0
-        })
-        log.info(f"Set SL result: {result}")
-        return result
